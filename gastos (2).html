@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0e0c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mis Gastos">
+<title>Mis Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1916;
+    --surface2: #232220;
+    --border: #2e2c28;
+    --accent: #e8c547;
+    --accent2: #c47b3a;
+    --text: #f0ece3;
+    --text2: #9b9488;
+    --text3: #5a5650;
+    --red: #d95f5f;
+    --green: #6abf7b;
+    --blue: #6b9fd4;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+    overscroll-behavior: none;
+  }
+
+  header {
+    padding: 20px 20px 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+
+  h1 span {
+    font-style: italic;
+    color: var(--text2);
+    font-size: 14px;
+    margin-left: 6px;
+  }
+
+  .header-summary {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .summary-pill { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .summary-pill label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .summary-pill .val { font-size: 15px; font-weight: 500; }
+  .val.expenses { color: var(--red); }
+  .val.balance { color: var(--accent); }
+
+  .tabs-wrapper { display: flex; overflow-x: auto; scrollbar-width: none; margin-top: 2px; }
+  .tabs-wrapper::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    padding: 10px 16px;
+    background: none; border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn .tab-total { font-size: 9px; color: var(--text3); display: block; margin-top: 1px; }
+  .tab-btn.active .tab-total { color: var(--accent2); }
+
+  .add-month-btn {
+    padding: 10px 14px; background: none; border: none;
+    color: var(--text3); cursor: pointer; font-size: 18px;
+    transition: color 0.15s; align-self: center; flex-shrink: 0;
+  }
+  .add-month-btn:hover { color: var(--accent); }
+
+  main { padding: 16px 16px 120px; }
+
+  .income-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+  }
+  .income-row label { color: var(--text2); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .income-input {
+    background: none; border: none; color: var(--green);
+    font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500;
+    flex: 1; min-width: 0; outline: none;
+  }
+  .income-input::placeholder { color: var(--text3); }
+  .progress-bar-wrap { width: 60px; background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; flex-shrink: 0; }
+  .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .progress-label { font-size: 10px; color: var(--text2); white-space: nowrap; min-width: 32px; text-align: right; flex-shrink: 0; }
+
+  .sections { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 500px) { .sections { grid-template-columns: 1fr; } }
+
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .section-header { padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); display: flex; align-items: center; gap: 7px; }
+  .section-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-fixed { background: var(--blue); }
+  .dot-variable { background: var(--accent2); }
+  .dot-installment { background: var(--accent); }
+  .section-total { font-size: 14px; font-weight: 500; color: var(--text); }
+
+  .expense-list { padding: 4px 0; min-height: 32px; }
+
+  .expense-item {
+    display: flex; align-items: center; padding: 7px 14px; gap: 8px;
+    transition: background 0.1s; animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
+  .expense-item:active { background: var(--surface2); }
+  .expense-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .expense-amount { font-weight: 500; color: var(--text); font-size: 12px; white-space: nowrap; }
+  .installment-badge {
+    font-size: 9px; padding: 2px 5px; border-radius: 10px;
+    background: var(--surface2); color: var(--accent); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;
+  }
+  .installment-badge.done { color: var(--green); border-color: var(--green); opacity: 0.6; }
+
+  .delete-btn {
+    background: none; border: none; color: var(--text3);
+    cursor: pointer; font-size: 13px; padding: 3px 5px;
+    border-radius: 3px; transition: all 0.15s; line-height: 1; flex-shrink: 0;
+  }
+  .delete-btn:active { color: var(--red); background: rgba(217,95,95,0.15); }
+
+  .add-form {
+    padding: 8px 14px 12px; border-top: 1px solid var(--border);
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  }
+
+  input, select {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: var(--radius); padding: 7px 10px;
+    font-family: 'DM Mono', monospace; font-size: 12px; outline: none;
+    transition: border-color 0.15s; -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--text3); }
+  select option { background: var(--surface2); }
+
+  .input-name { flex: 1; min-width: 80px; }
+  .input-amount { width: 90px; }
+  .input-cuotas { width: 56px; }
+
+  .add-btn {
+    background: var(--accent); color: var(--bg); border: none;
+    border-radius: var(--radius); padding: 7px 12px; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+    transition: opacity 0.15s; white-space: nowrap;
+  }
+  .add-btn:active { opacity: 0.75; }
+
+  .section.full-width { grid-column: 1 / -1; }
+
+  .empty { text-align: center; padding: 16px; color: var(--text3); font-size: 11px; font-style: italic; }
+
+  .cuotas-info { font-size: 10px; color: var(--text3); padding: 4px 14px 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .cuotas-info span { color: var(--accent); }
+
+  .currency-wrap { position: relative; display: flex; align-items: center; }
+  .currency-symbol { position: absolute; left: 8px; color: var(--text3); pointer-events: none; font-size: 12px; }
+  .currency-wrap input { padding-left: 18px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.hidden { display: none; }
+
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; padding: 24px 24px 40px;
+    width: 100%; max-width: 480px; animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--accent); margin-bottom: 18px; }
+  .modal-field { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .modal-field label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+  .modal-field input, .modal-field select { width: 100%; font-size: 16px; padding: 10px 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancel { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 12px; border-radius: var(--radius); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 14px; }
+  .btn-confirm { flex: 2; background: var(--accent); color: var(--bg); border: none; padding: 12px; border-radius: var(--radius); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 28px; right: 20px;
+    width: 62px; height: 62px; border-radius: 50%;
+    background: var(--accent); color: var(--bg); border: none;
+    font-size: 32px; line-height: 1; cursor: pointer; z-index: 150;
+    box-shadow: 0 4px 28px rgba(232,197,71,0.4);
+    transition: transform 0.2s, background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+  }
+  .fab:active { transform: scale(0.9); }
+  .fab.open { background: var(--surface2); color: var(--text2); box-shadow: 0 2px 12px rgba(0,0,0,0.3); font-size: 20px; }
+
+  /* QUICK PANEL */
+  .quick-panel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0; padding: 16px 20px 44px;
+    z-index: 140;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+  }
+  .quick-panel.visible { transform: translateY(0); }
+
+  .quick-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+  .quick-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--accent); margin-bottom: 14px; }
+
+  .smart-row { display: flex; gap: 8px; margin-bottom: 10px; }
+
+  .smart-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: var(--radius); padding: 13px 14px;
+    font-family: 'DM Mono', monospace; font-size: 16px; outline: none; -webkit-appearance: none;
+  }
+  .smart-input:focus { border-color: var(--accent); }
+  .smart-input::placeholder { color: var(--text3); font-size: 13px; }
+
+  .smart-amount {
+    width: 110px; flex-shrink: 0; background: var(--surface2);
+    border: 1px solid var(--border); color: var(--green);
+    border-radius: var(--radius); padding: 13px 14px 13px 22px;
+    font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500;
+    outline: none; -webkit-appearance: none;
+  }
+  .smart-amount:focus { border-color: var(--accent); }
+  .smart-amount::placeholder { color: var(--text3); font-size: 13px; font-weight: 300; }
+
+  .cat-pills { display: flex; gap: 8px; margin-bottom: 14px; }
+
+  .cat-pill {
+    padding: 7px 16px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text2); font-family: 'DM Mono', monospace; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cat-pill.active-fixed { background: rgba(107,159,212,0.12); border-color: var(--blue); color: var(--blue); }
+  .cat-pill.active-variable { background: rgba(196,123,58,0.12); border-color: var(--accent2); color: var(--accent2); }
+
+  .quick-add-btn {
+    width: 100%; background: var(--accent); color: var(--bg); border: none;
+    border-radius: var(--radius); padding: 15px;
+    font-family: 'DM Serif Display', serif; font-size: 19px;
+    cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.3px;
+  }
+  .quick-add-btn:active { opacity: 0.8; }
+
+  .hint { font-size: 10px; color: var(--text3); text-align: center; margin-top: 10px; line-height: 1.5; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 18px; border-radius: 20px; font-size: 12px;
+    z-index: 400; animation: toastIn 0.2s ease; white-space: nowrap;
+  }
+  @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+  /* INSTALL BANNER */
+  .install-banner {
+    display: none; align-items: center; gap: 10px;
+    background: rgba(232,197,71,0.07); border: 1px solid rgba(232,197,71,0.2);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px;
+    font-size: 11px; color: var(--text2);
+  }
+  .install-banner.show { display: flex; }
+  .install-banner strong { color: var(--accent); }
+  .install-btn-small {
+    margin-left: auto; background: var(--accent); color: var(--bg); border: none;
+    padding: 5px 12px; border-radius: 4px; font-family: 'DM Mono', monospace;
+    font-size: 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  }
+  .dismiss-banner { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>mis gastos <span id="headerMonth"></span></h1>
+    <div class="header-summary">
+      <div class="summary-pill">
+        <label>Gastos</label>
+        <div class="val expenses" id="summaryExpenses">$0</div>
+      </div>
+      <div class="summary-pill">
+        <label>Libre</label>
+        <div class="val balance" id="summaryBalance">$0</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center;">
+    <div class="tabs-wrapper" id="tabsWrapper"></div>
+    <button class="add-month-btn" onclick="addNextMonth()" title="Agregar mes">+</button>
+  </div>
+</header>
+
+<main>
+  <div class="install-banner" id="installBanner">
+    <span>📱 <strong>Instalá como app</strong> en tu pantalla de inicio para acceso instantáneo</span>
+    <button class="install-btn-small" id="installBtn">Instalar</button>
+    <button class="dismiss-banner" onclick="dismissInstall()">✕</button>
+  </div>
+
+  <div class="income-row">
+    <label>Ingreso</label>
+    <div class="currency-wrap" style="flex:1;min-width:0;">
+      <span class="currency-symbol">$</span>
+      <input class="income-input" id="incomeInput" type="text" inputmode="numeric" placeholder="0" oninput="updateIncome()">
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">0%</div>
+  </div>
+
+  <div class="sections">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-dot dot-fixed"></div>Fijos</div>
+        <div class="section-total" id="totalFixed">$0</div>
+      </div>
+      <div class="expense-list" id="listFixed"></div>
+      <div class="add-form">
+        <input class="input-name" id="nameFixed" type="text" placeholder="Descripción..." onkeydown="enterAdd(event,'fixed')">
+        <div class="currency-wrap">
+          <span class="currency-symbol">$</span>
+          <input class="input-amount" id="amountFixed" type="text" inputmode="numeric" placeholder="0" onkeydown="enterAdd(event,'fixed')">
+        </div>
+        <button class="add-btn" onclick="addExpense('fixed')">+</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><div class="section-dot dot-variable"></div>TC / Efectivo</div>
+        <div class="section-total" id="totalVariable">$0</div>
+      </div>
+      <div class="expense-list" id="listVariable"></div>
+      <div class="add-form">
+        <input class="input-name" id="nameVariable" type="text" placeholder="Descripción..." onkeydown="enterAdd(event,'variable')">
+        <div class="currency-wrap">
+          <span class="currency-symbol">$</span>
+          <input class="input-amount" id="amountVariable" type="text" inputmode="numeric" placeholder="0" onkeydown="enterAdd(event,'variable')">
+        </div>
+        <button class="add-btn" onclick="addExpense('variable')">+</button>
+      </div>
+    </div>
+
+    <div class="section full-width">
+      <div class="section-header">
+        <div class="section-title"><div class="section-dot dot-installment"></div>Cuotas activas</div>
+        <div class="section-total" id="totalInstallments">$0</div>
+      </div>
+      <div class="cuotas-info" id="cuotasInfo"></div>
+      <div class="expense-list" id="listInstallments"></div>
+      <div class="add-form">
+        <input class="input-name" id="nameInstallment" type="text" placeholder="Descripción...">
+        <div class="currency-wrap">
+          <span class="currency-symbol">$</span>
+          <input class="input-amount" id="amountInstallment" type="text" inputmode="numeric" placeholder="Total">
+        </div>
+        <input class="input-cuotas" id="cuotasCount" type="text" inputmode="numeric" placeholder="C.">
+        <button class="add-btn" onclick="addInstallment()">+</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="toggleQuickPanel()">＋</button>
+
+<!-- QUICK PANEL -->
+<div class="quick-panel" id="quickPanel">
+  <div class="quick-handle"></div>
+  <div class="quick-title">Carga rápida</div>
+
+  <div class="smart-row">
+    <input class="smart-input" id="quickName" type="text" placeholder="¿En qué gastaste?" autocomplete="off" autocorrect="off">
+    <div style="position:relative; flex-shrink:0;">
+      <span class="currency-symbol" style="left:10px; top:50%; transform:translateY(-50%); position:absolute;">$</span>
+      <input class="smart-amount" id="quickAmount" type="text" inputmode="numeric" placeholder="monto">
+    </div>
+  </div>
+
+  <div class="cat-pills">
+    <button class="cat-pill active-variable" id="pillVariable" onclick="selectCat('variable')">💳 TC / Efectivo</button>
+    <button class="cat-pill" id="pillFixed" onclick="selectCat('fixed')">📌 Fijo</button>
+  </div>
+
+  <button class="quick-add-btn" onclick="quickAdd()">Guardar gasto</button>
+  <div class="hint">Tip: podés escribir "super 2500" y toca guardar — lo interpreta solo</div>
+</div>
+
+<div id="panelBackdrop" style="display:none; position:fixed; inset:0; z-index:139; background:rgba(0,0,0,0.4);" onclick="closeQuickPanel()"></div>
+
+<!-- MONTH MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <h3>Nuevo mes</h3>
+    <div class="modal-field">
+      <label>Mes y año</label>
+      <input type="month" id="modalMonthInput">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmAddMonth()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let state = { months: [], installments: [], activeMonthId: null };
+  let quickCat = 'variable';
+  let deferredInstallPrompt = null;
+
+  const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  function genId() { return '_' + Math.random().toString(36).slice(2,9); }
+  function monthLabel(dateStr) { const [y,m] = dateStr.split('-'); return MONTH_NAMES[parseInt(m)-1]+' '+y.slice(2); }
+  function nextMonthStr(dateStr) { const [y,m] = dateStr.split('-').map(Number); const d = new Date(y,m); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  function currentMonthStr() { const n = new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
+
+  // PWA
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (!localStorage.getItem('installDismissed')) {
+      document.getElementById('installBanner').classList.add('show');
+    }
+  });
+
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') document.getElementById('installBanner').classList.remove('show');
+    deferredInstallPrompt = null;
+  });
+
+  function dismissInstall() {
+    document.getElementById('installBanner').classList.remove('show');
+    localStorage.setItem('installDismissed','1');
+  }
+
+  function init() {
+    const saved = localStorage.getItem('gastos_state_v2');
+    if (saved) { try { state = JSON.parse(saved); } catch(e) {} }
+    if (state.months.length === 0) {
+      const m = currentMonthStr();
+      state.months.push({ id: genId(), dateStr: m, label: monthLabel(m), income: 0, fixed: [], variable: [], installmentRefs: [] });
+      state.activeMonthId = state.months[0].id;
+    }
+    if (!state.activeMonthId) state.activeMonthId = state.months[0].id;
+    renderAll();
+  }
+
+  function save() { localStorage.setItem('gastos_state_v2', JSON.stringify(state)); }
+
+  function renderAll() { renderTabs(); renderMonth(); updateSummary(); }
+
+  function renderTabs() {
+    const wrap = document.getElementById('tabsWrapper');
+    wrap.innerHTML = '';
+    state.months.forEach(m => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (m.id === state.activeMonthId ? ' active' : '');
+      btn.innerHTML = `${m.label}<span class="tab-total">${fmt(monthTotal(m))}</span>`;
+      btn.onclick = () => { state.activeMonthId = m.id; renderAll(); };
+      wrap.appendChild(btn);
+    });
+    const active = wrap.querySelector('.active');
+    if (active) active.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+  }
+
+  function renderMonth() {
+    const m = activeMonth(); if (!m) return;
+    document.getElementById('headerMonth').textContent = '· ' + m.label;
+    document.getElementById('incomeInput').value = m.income ? String(m.income) : '';
+    renderList('fixed', m.fixed);
+    renderList('variable', m.variable);
+    renderInstallments(m);
+    updateTotals(m);
+    updateProgress(m);
+  }
+
+  function renderList(type, items) {
+    const el = document.getElementById('list' + cap(type));
+    el.innerHTML = '';
+    if (!items.length) { el.innerHTML = '<div class="empty">Sin gastos aún</div>'; return; }
+    items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'expense-item';
+      row.innerHTML = `<span class="expense-name">${esc(item.name)}</span><span class="expense-amount">${fmt(item.amount)}</span><button class="delete-btn" onclick="deleteExpense('${type}','${item.id}')">✕</button>`;
+      el.appendChild(row);
+    });
+  }
+
+  function renderInstallments(m) {
+    const el = document.getElementById('listInstallments');
+    const infoEl = document.getElementById('cuotasInfo');
+    el.innerHTML = '';
+    const active = state.installments.filter(i => i.payments.some(p => p.monthId === m.id));
+    if (!active.length) { el.innerHTML = '<div class="empty">Sin cuotas este mes</div>'; infoEl.innerHTML = ''; return; }
+    let infoHtml = '';
+    active.forEach(inst => {
+      const payment = inst.payments.find(p => p.monthId === m.id);
+      const paidCount = inst.payments.filter(p => p.paid).length;
+      const isLast = (inst.totalMonths - paidCount) === 1 && payment;
+      const row = document.createElement('div');
+      row.className = 'expense-item';
+      row.innerHTML = `<span class="expense-name">${esc(inst.name)}</span><span class="installment-badge${isLast?' done':''}">${paidCount+1}/${inst.totalMonths}</span><span class="expense-amount">${fmt(inst.monthlyAmount)}</span><button class="delete-btn" onclick="deleteInstallment('${inst.id}')">✕</button>`;
+      el.appendChild(row);
+      if (isLast) infoHtml += `<div>🎉 <span>${inst.name}</span> se libera el próximo mes</div>`;
+    });
+    infoEl.innerHTML = infoHtml;
+  }
+
+  function monthTotal(m) {
+    return m.fixed.reduce((s,x) => s+x.amount, 0)
+      + m.variable.reduce((s,x) => s+x.amount, 0)
+      + state.installments.filter(i => i.payments.some(p => p.monthId === m.id)).reduce((s,i) => s+i.monthlyAmount, 0);
+  }
+
+  function updateTotals(m) {
+    document.getElementById('totalFixed').textContent = fmt(m.fixed.reduce((s,x) => s+x.amount, 0));
+    document.getElementById('totalVariable').textContent = fmt(m.variable.reduce((s,x) => s+x.amount, 0));
+    document.getElementById('totalInstallments').textContent = fmt(state.installments.filter(i => i.payments.some(p => p.monthId === m.id)).reduce((s,i) => s+i.monthlyAmount, 0));
+  }
+
+  function updateSummary() {
+    const m = activeMonth(); if (!m) return;
+    const expenses = monthTotal(m);
+    const balance = (m.income||0) - expenses;
+    document.getElementById('summaryExpenses').textContent = fmt(expenses);
+    document.getElementById('summaryBalance').textContent = fmt(balance);
+    document.getElementById('summaryBalance').style.color = balance >= 0 ? 'var(--accent)' : 'var(--red)';
+  }
+
+  function updateProgress(m) {
+    const income = m.income||0;
+    const pct = income > 0 ? Math.min(100, (monthTotal(m)/income)*100) : 0;
+    const bar = document.getElementById('progressBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct < 70 ? 'var(--green)' : pct < 90 ? 'var(--accent)' : 'var(--red)';
+    document.getElementById('progressLabel').textContent = Math.round(pct) + '%';
+  }
+
+  function updateIncome() {
+    const m = activeMonth(); if (!m) return;
+    m.income = parseInt(document.getElementById('incomeInput').value.replace(/[^0-9]/g,'')) || 0;
+    save(); updateSummary(); updateProgress(m); renderTabs();
+  }
+
+  function parseAmount(id) { return parseInt(document.getElementById(id).value.replace(/[^0-9]/g,'')) || 0; }
+
+  function addExpense(type) {
+    const m = activeMonth();
+    const name = document.getElementById('name'+cap(type)).value.trim();
+    const amount = parseAmount('amount'+cap(type));
+    if (!name || !amount) { toast('Ingresá nombre y monto'); return; }
+    m[type].push({ id: genId(), name, amount });
+    document.getElementById('name'+cap(type)).value = '';
+    document.getElementById('amount'+cap(type)).value = '';
+    save(); renderAll();
+  }
+
+  function deleteExpense(type, id) { const m = activeMonth(); m[type] = m[type].filter(x => x.id !== id); save(); renderAll(); }
+  function enterAdd(e, type) { if (e.key === 'Enter') addExpense(type); }
+
+  // QUICK ADD
+  function toggleQuickPanel() {
+    document.getElementById('quickPanel').classList.contains('visible') ? closeQuickPanel() : openQuickPanel();
+  }
+
+  function openQuickPanel() {
+    document.getElementById('quickPanel').classList.add('visible');
+    document.getElementById('panelBackdrop').style.display = 'block';
+    document.getElementById('fab').classList.add('open');
+    document.getElementById('fab').textContent = '✕';
+    setTimeout(() => document.getElementById('quickName').focus(), 300);
+  }
+
+  function closeQuickPanel() {
+    document.getElementById('quickPanel').classList.remove('visible');
+    document.getElementById('panelBackdrop').style.display = 'none';
+    document.getElementById('fab').classList.remove('open');
+    document.getElementById('fab').textContent = '＋';
+  }
+
+  function selectCat(cat) {
+    quickCat = cat;
+    document.getElementById('pillFixed').className = 'cat-pill' + (cat==='fixed' ? ' active-fixed' : '');
+    document.getElementById('pillVariable').className = 'cat-pill' + (cat==='variable' ? ' active-variable' : '');
+  }
+
+  function quickAdd() {
+    const m = activeMonth();
+    let nameVal = document.getElementById('quickName').value.trim();
+    let amountRaw = document.getElementById('quickAmount').value.replace(/[^0-9]/g,'');
+
+    // Smart parse: "super 1500" → name=super, amount=1500
+    if (!amountRaw && nameVal) {
+      const match = nameVal.match(/^(.+?)\s+(\d+)\s*$/);
+      if (match) { nameVal = match[1].trim(); amountRaw = match[2]; }
+    }
+
+    const amount = parseInt(amountRaw) || 0;
+    if (!nameVal || !amount) { toast('Escribí nombre y monto'); return; }
+
+    m[quickCat].push({ id: genId(), name: nameVal, amount });
+    document.getElementById('quickName').value = '';
+    document.getElementById('quickAmount').value = '';
+    save(); renderAll(); closeQuickPanel();
+    toast(`✓ ${nameVal}  ${fmt(amount)}`);
+  }
+
+  document.getElementById('quickAmount').addEventListener('keydown', e => { if (e.key==='Enter') quickAdd(); });
+  document.getElementById('quickName').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('quickAmount').focus(); });
+
+  // INSTALLMENTS
+  function addInstallment() {
+    const m = activeMonth();
+    const name = document.getElementById('nameInstallment').value.trim();
+    const total = parseAmount('amountInstallment');
+    const cuotas = parseInt(document.getElementById('cuotasCount').value.replace(/[^0-9]/g,'')) || 0;
+    if (!name || !total || cuotas < 2) { toast('Nombre, monto total y cuotas (mín. 2)'); return; }
+    const monthly = Math.ceil(total / cuotas);
+    const inst = { id: genId(), name, totalAmount: total, monthlyAmount: monthly, totalMonths: cuotas, startMonthId: m.id, payments: [] };
+    let idx = state.months.findIndex(x => x.id === m.id);
+    for (let i = 0; i < cuotas; i++) {
+      while (idx + i >= state.months.length) createNextMonth();
+      inst.payments.push({ monthId: state.months[idx+i].id, paid: false });
+    }
+    state.installments.push(inst);
+    document.getElementById('nameInstallment').value = '';
+    document.getElementById('amountInstallment').value = '';
+    document.getElementById('cuotasCount').value = '';
+    save(); renderAll();
+    toast(`✓ "${name}" — ${cuotas} cuotas de ${fmt(monthly)}`);
+  }
+
+  function deleteInstallment(id) { state.installments = state.installments.filter(x => x.id !== id); save(); renderAll(); }
+
+  function createNextMonth() {
+    const last = state.months[state.months.length-1];
+    const nextStr = nextMonthStr(last.dateStr);
+    state.months.push({ id: genId(), dateStr: nextStr, label: monthLabel(nextStr), income: last.income, fixed: JSON.parse(JSON.stringify(last.fixed)), variable: [], installmentRefs: [] });
+  }
+
+  function addNextMonth() { createNextMonth(); state.activeMonthId = state.months[state.months.length-1].id; save(); renderAll(); toast('Mes agregado — gastos fijos copiados'); }
+
+  function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
+  function confirmAddMonth() {
+    const val = document.getElementById('modalMonthInput').value; if (!val) return;
+    const last = state.months[state.months.length-1];
+    state.months.push({ id: genId(), dateStr: val, label: monthLabel(val), income: last.income, fixed: JSON.parse(JSON.stringify(last.fixed)), variable: [], installmentRefs: [] });
+    state.activeMonthId = state.months[state.months.length-1].id;
+    closeModal(); save(); renderAll();
+  }
+
+  function activeMonth() { return state.months.find(m => m.id === state.activeMonthId); }
+  function fmt(n) { return '$' + Number(n).toLocaleString('es-AR'); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function esc(s) { return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function toast(msg) {
+    const e = document.querySelector('.toast'); if (e) e.remove();
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+    document.body.appendChild(el); setTimeout(() => el.remove(), 2800);
+  }
+
+  init();
+</script>
+</body>
+</html>
